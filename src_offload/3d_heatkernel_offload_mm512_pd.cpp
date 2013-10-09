@@ -25,7 +25,7 @@ void compute_7pt_stencile_mm512_pd
 {
 //use this macro for the offload mode:
 #ifdef __MIC__
-#include "3d_hk_core_pd.h"
+#include "mm512pd_3d_hk_core.h"
 #else
   printf("\nThe heat kernel stencile operator was not compiled for the host..\n");
   exit(-1);

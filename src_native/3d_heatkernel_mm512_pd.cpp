@@ -19,7 +19,7 @@ const int problem_dim = PROBLEM_SIZE;
 void compute_7pt_stencile_mm512_pd
 (double *out, const double *in, const int Lx, const int Ly, const int Lz, const double C1, const double C2)
 {
-#include "3d_hk_core_pd.h"
+#include "mm512pd_3d_hk_core.h"
   return;
 }
 
