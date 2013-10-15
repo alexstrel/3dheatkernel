@@ -1,5 +1,5 @@
-#ifndef MM512PS_3D_HK_CORE_H_
-#define MM512PS_3D_HK_CORE_H_
+#ifndef MM512PS_3D_HK_MDEV_CORE_H_
+#define MM512PS_3D_HK_MDEV_CORE_H_
 
 #define MM512_PS_UNROLL 16
 #define MM512_UNROLL MM512_PS_UNROLL
@@ -22,12 +22,21 @@
  __m512 register c0 = _mm512_set1_ps(C0);
  __m512 register c1 = _mm512_set1_ps(C1);
 
+#ifndef INTERIOR
+  const int bulkVolume = Lz*LyLx
+  const int faceVolume = LyLx;
+  const int zbgn = 0;
+  const int zend = 2;
+#else
+  const int zbgn = 1;
+  const int zend = Lzm1;
+#endif
+
 #pragma omp parallel
 {
-
 #pragma noprefetch out
 #pragma omp for collapse(2)
-  for(int z = 0; z < Lz; z++)
+  for(int z = zbgn; z < zend; z++)//note: z is a local coordinate to the subdomain... 
   for(int y = 0; y < Ly; y++)
   {
     /*z, y coordinates:*/
@@ -37,10 +46,15 @@
     int s_yp1 = (y == Lym1) ? s : s + Lx;
     int s_ym1 = (y == 0)    ? s : s - Lx;
 
-    int s_zp1 = (z == Lzm1) ? s : s + LyLx;
-    int s_zm1 = (z == 0)    ? s : s - LyLx;
+#ifdef INTERIOR
+    int s_zp1 = s + LyLx;
+    int s_zm1 = s - LyLx;
 
     if(z != (Lzm1 - 1)) _mm_prefetch((const char*)&in[s_zp1+LyLx], _MM_HINT_T1);
+#else
+    int s_zp1 = z ? s + (bulkVolume + faceVolume) : s + LyLx;
+    int s_zm1 = z ? s - LyLx : s + bulkVolume;
+#endif
 
     __m512 USE_REG_HINT o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1;
 

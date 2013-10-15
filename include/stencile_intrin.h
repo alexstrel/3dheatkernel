@@ -5,19 +5,9 @@
 
 #define USE_REG_HINT register
 
-//Single precision intrinsics macro
-//expected latency : 5(mul+first add)+2*3(add)+3*5(madd)=26
-#define _mm512_stencile_ps(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c0, cx, cy, cz) \
-  o    = _mm512_mul_ps(c0, i);                                                       \
-  ixm1 = _mm512_add_ps(ixp1, ixm1);                                                  \
-  o    = _mm512_fmadd_ps(ixm1, cx, o);                                               \
-  iym1 = _mm512_add_ps(iyp1, iym1);                                                  \
-  o    = _mm512_fmadd_ps(iym1, cy, o);                                               \
-  izm1 = _mm512_add_ps(izp1, izm1);                                                  \
-  o    = _mm512_fmadd_ps(izm1, cz, o);  
-
+//Single precision intrinsics:
 //expected latency : 5(mul+first add)+4*3(add)+5(madd)=22
-#define _mm512_isotrop_stencile_ps(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2) \
+#define _mm512_stencile_ps(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2) \
   o    = _mm512_mul_ps(c1, i);                                                       \
   ixm1 = _mm512_add_ps(ixp1, ixm1);                                                  \
   iym1 = _mm512_add_ps(iyp1, iym1);                                                  \
@@ -26,6 +16,7 @@
   ixm1 = _mm512_add_ps(iym1, ixm1);                                                  \
   o    = _mm512_fmadd_ps(ixm1, c2, o);                                               
 
+//Register manipulations:
 #define _mm512_fwd_cyclic_shift_ps(o, i)     \
   o  = _mm512_mask_swizzle_ps(_mm512_swizzle_ps(i, _MM_SWIZ_REG_CDAB), 0x5555, _mm512_swizzle_ps(i, _MM_SWIZ_REG_BADC), _MM_SWIZ_REG_CDAB);\
   o  = _mm512_mask_blend_ps(0x1111, o, _mm512_permute4f128_ps(o, _MM_PERM_CBAD));
@@ -36,22 +27,22 @@
   o  = _mm512_mask_blend_ps(0x8888, o, _mm512_permute4f128_ps(o, _MM_PERM_ADCB));
 
 //old versions for dirichlet shifts:
-#define _mm512_fwd_dirichlet_shift_ps_v0(o, i)     \
+#define _mm512_fwd_dirichlet_shift_ps_old(o, i)     \
   o  = _mm512_mask_swizzle_ps(_mm512_swizzle_ps(i, _MM_SWIZ_REG_CDAB), 0x5555, _mm512_swizzle_ps(i, _MM_SWIZ_REG_BADC), _MM_SWIZ_REG_CDAB);\
   o  = _mm512_mask_blend_ps(0x1111, o, _mm512_permute4f128_ps(o, _MM_PERM_CBAD));\
   o  = _mm512_mask_mov_ps(o, 0x0001, i);
 
-#define _mm512_bwd_dirichlet_shift_ps_v0(o, i)                                                         \
+#define _mm512_bwd_dirichlet_shift_ps_old(o, i)                                                         \
   o  = _mm512_mask_swizzle_ps(_mm512_swizzle_ps(i, _MM_SWIZ_REG_DACB), 0xCCCC, _mm512_swizzle_ps(i, _MM_SWIZ_REG_DACB), _MM_SWIZ_REG_CDAB);\
   o  = _mm512_mask_blend_ps(0x8888, o, _mm512_permute4f128_ps(o, _MM_PERM_ADCB));\
   o  = _mm512_mask_mov_ps(o, 0x8000, i);
 
 //new versions for dirichlet shifts:
-#define _mm512_fwd_dirichlet_shift_ps_v1(o, i, i_ptr)     \
+#define _mm512_fwd_dirichlet_shift_ps(o, i, i_ptr)     \
   o  = _mm512_loadunpackhi_ps(o, (char*)(i_ptr+15));   \
   o  = _mm512_mask_mov_ps(o, 0x0001, i);
 
-#define _mm512_bwd_dirichlet_shift_ps_v1(o, i, i_ptr)     \
+#define _mm512_bwd_dirichlet_shift_ps(o, i, i_ptr)     \
   o  = _mm512_loadunpacklo_ps(o, (char*)(i_ptr+1));   \
   o  = _mm512_mask_mov_ps(o, 0x8000, i);
 
@@ -62,17 +53,7 @@
 
 
 //Double precision intrinsics macro
-
-#define _mm512_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c0, cx, cy, cz) \
-  o    = _mm512_mul_pd(c0, i);                                                       \
-  ixm1 = _mm512_add_pd(ixp1, ixm1);                                                  \
-  o    = _mm512_fmadd_pd(ixm1, cx, o);                                               \
-  iym1 = _mm512_add_pd(iyp1, iym1);                                                  \
-  o    = _mm512_fmadd_pd(iym1, cy, o);                                               \
-  izm1 = _mm512_add_pd(izp1, izm1);                                                  \
-  o    = _mm512_fmadd_pd(izm1, cz, o);                                               
-
-#define _mm512_isotrop_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2) \
+#define _mm512_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2) \
   o    = _mm512_mul_pd(c1, i);                                                       \
   ixm1 = _mm512_add_pd(ixp1, ixm1);                                                  \
   iym1 = _mm512_add_pd(iyp1, iym1);                                                  \
@@ -82,11 +63,11 @@
   o    = _mm512_fmadd_pd(ixm1, c2, o);
 
 //'dirichlet' shifts:
-#define _mm512_fwd_dirichlet_shift_pd_v1(o, i, i_ptr)     \
+#define _mm512_fwd_dirichlet_shift_pd(o, i, i_ptr)     \
   o  = _mm512_loadunpackhi_pd(o, (char*)(i_ptr+7));   \
   o  = _mm512_mask_mov_pd(o, 0x01, i);
 
-#define _mm512_bwd_dirichlet_shift_pd_v1(o, i, i_ptr)     \
+#define _mm512_bwd_dirichlet_shift_pd(o, i, i_ptr)     \
   o  = _mm512_loadunpacklo_pd(o, (char*)(i_ptr+1));   \
   o  = _mm512_mask_mov_pd(o, 0x80, i);
 

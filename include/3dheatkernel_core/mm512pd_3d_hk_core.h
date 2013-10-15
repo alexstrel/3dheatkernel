@@ -1,5 +1,5 @@
-#ifndef _3D_HK_CORE_PD_H_
-#define _3D_HK_CORE_PD_H_
+#ifndef MM512PD_3D_HK_CORE_H_
+#define MM512PD_3D_HK_CORE_H_
 
 #define MM512_PD_UNROLL 8
 #define MM512_UNROLL MM512_PD_UNROLL
@@ -51,12 +51,12 @@
     ixm1 = _mm512_setzero_pd();
 
     /*X- neighbors:*/
-    _mm512_fwd_dirichlet_shift_pd_v1(ixm1, i, &in[s]);
+    _mm512_fwd_dirichlet_shift_pd(ixm1, i, &in[s]);
 
     /*X+ neighbours:*/
     _mm512_unaligned_load_pd(ixp1, &in[s+1]);
 
-    _mm512_isotrop_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2);
+    _mm512_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2);
     /*Load back to main memory:*/
     _mm512_extstore_pd((double*)&out[s], o, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
 #pragma novector
@@ -77,7 +77,7 @@
       _mm512_unaligned_load_pd(ixm1, &in[s-1]);     
       _mm512_unaligned_load_pd(ixp1, &in[s+1]);
 
-      _mm512_isotrop_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2);
+      _mm512_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2);
       _mm512_extstore_pd((double*)&out[s], o, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
     }
     s_yp1 += MM512_UNROLL;
@@ -94,9 +94,9 @@
 
     _mm512_unaligned_load_pd(ixm1, &in[s-1]);
  
-    _mm512_bwd_dirichlet_shift_pd_v1(ixp1, i, &in[s]);
+    _mm512_bwd_dirichlet_shift_pd(ixp1, i, &in[s]);
 
-    _mm512_isotrop_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2);
+    _mm512_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2);
     _mm512_extstore_pd((double*)&out[s], o, _MM_DOWNCONV_PD_NONE, _MM_HINT_NT);
   }
 }/*end of openmp region */
