@@ -5,6 +5,8 @@
 
 #define USE_REG_HINT register
 
+/******Collection of IMCI intrinsics*******/
+
 //Single precision intrinsics:
 //expected latency : 5(mul+first add)+4*3(add)+5(madd)=22
 #define _mm512_stencile_ps(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2) \
@@ -75,5 +77,66 @@
 #define _mm512_unaligned_load_pd(o, ptr)	   	        \
   o   = _mm512_loadunpacklo_pd(o, (char*)ptr   );	\
   o   = _mm512_loadunpackhi_pd(o, (char*)ptr+64);
+
+
+/******Collection of AVX/AVX2 intrinsics*******/
+
+//single precision
+
+#define _mm256_avx2_stencile_ps(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2)	\
+  o    = _mm256_mul_ps(c1, i);                                                       	\
+  ixm1 = _mm256_add_ps(ixp1, ixm1);                                                  	\
+  iym1 = _mm256_add_ps(iyp1, iym1);                                                  	\
+  izm1 = _mm256_add_ps(izp1, izm1);                                                  	\
+  iym1 = _mm256_add_ps(izm1, iym1);                                                  	\
+  ixm1 = _mm256_add_ps(iym1, ixm1);                                                  	\
+  o    = _mm256_fmadd_ps(ixm1, c2, o); 
+
+#define _mm256_fwd_cyclic_shift_ps(o, i)					\
+    o = _mm256_permute_ps(_mm256_blend_ps(i, i, 128), _MM_SHUFFLE(2,1,0,3));	\
+    o = _mm256_blend_ps(o, _mm256_permute2f128_ps(o, o, 1), 17);				  
+
+#define _mm256_bwd_cyclic_shift_ps(o, i)					\
+    o = _mm256_permute_ps(_mm256_blend_ps(i, i, 1), _MM_SHUFFLE(0,3,2,1));	\
+    o = _mm256_blend_ps(o, _mm256_permute2f128_ps(o, o, 1), 136);
+
+//avx2 versions for dirichlet shifts:
+#define _mm256_avx2_fwd_dirichlet_shift_ps(i, i_ptr)                 \
+{\
+    __m256i dirichlet_shift_idx = _mm256_set_epi32(6,5,4,3,2,1,0,0);         \
+    i  = _mm256_i32gather_ps ((float*)i_ptr, dirichlet_shift_idx, 4);\
+}
+
+#define _mm256_avx2_bwd_dirichlet_shift_ps(i, i_ptr)     \
+{\
+    __m256i dirichlet_shift_idx = _mm256_set_epi32(7,7,6,5,4,3,2,1);         \
+    i  = _mm256_i32gather_ps ((float*)i_ptr, dirichlet_shift_idx, 4);\
+}
+
+
+//double precision
+
+#define _mm256_avx2_stencile_pd(o, i, ixp1, ixm1, iyp1, iym1, izp1, izm1, c1, c2)	\
+  o    = _mm256_mul_pd(c1, i);                                                       	\
+  ixm1 = _mm256_add_pd(ixp1, ixm1);                                                  	\
+  iym1 = _mm256_add_pd(iyp1, iym1);                                                  	\
+  izm1 = _mm256_add_pd(izp1, izm1);                                                  	\
+  iym1 = _mm256_add_pd(izm1, iym1);                                                  	\
+  ixm1 = _mm256_add_pd(iym1, ixm1);                                                  	\
+  o    = _mm256_fmadd_pd(ixm1, c2, o); 
+
+//avx2 versions for dirichlet shifts:
+#define _mm256_avx2_fwd_dirichlet_shift_pd(i, i_ptr)                 \
+{\
+    __m128i dirichlet_shift_idx = _mm_set_epi32(2,1,0,0);         \
+    i  = _mm256_i32gather_pd ((double*)i_ptr, dirichlet_shift_idx, 8);\
+}
+
+#define _mm256_avx2_bwd_dirichlet_shift_pd(i, i_ptr)     \
+{\
+    __m128i dirichlet_shift_idx = _mm_set_epi32(3,3,2,1);         \
+    i  = _mm256_i32gather_pd ((double*)i_ptr, dirichlet_shift_idx, 8);\
+}
+
 
 #endif //_STENCILE_INTRIN_H_
